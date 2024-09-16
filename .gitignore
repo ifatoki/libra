@@ -1,1 +1,78 @@
-.venv
+# Python bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environment directories
+venv/
+env/
+.venv/
+ENV/
+.ENV/
+
+# Flask specific
+instance/
+*.db
+*.sqlite3
+
+# Logs and debug files
+*.log
+*.pot
+*.pid
+*.pyc
+*.pyo
+
+# Environment variables
+.env
+.env.*
+
+# Database backups
+*.bak
+*.sql
+
+# Configurations
+config.py
+config.yaml
+config.json
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints
+
+# Pytest cache
+.pytest_cache/
+.tox/
+
+# Coverage reports
+htmlcov/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+
+# MyPy type checker reports
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# PyCharm specific
+.idea/
+
+# VSCode specific
+.vscode/
+
+# Docker
+docker-compose.yml
+docker-compose.override.yml
+Dockerfile
+
+# macOS specific
+.DS_Store
+
+# Windows specific
+Thumbs.db
+ehthumbs.db
+
+# Other system-specific files
+*.swp
+*.swo

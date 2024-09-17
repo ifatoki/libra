@@ -1,4 +1,6 @@
-from app import app, mongo
+import json
+from app import app, mongo, r
+from app.helpers.utils import json_serialize
 from flask import request, jsonify
 from datetime import datetime
 from bson.objectid import ObjectId
@@ -14,6 +16,9 @@ def add_book():
         "category": data['category']
     }
     mongo.db.books.insert_one(book)
+
+    book["event"] = "book_added"
+    r.publish("frontend_events", json.dumps(book, default=json_serialize))
     return jsonify({"message": "Book added successfully!"}), 201
 
 # Route to remove a book
@@ -22,6 +27,12 @@ def remove_book(book_id):
     result = mongo.db.books.delete_one({"_id": ObjectId(book_id)})
     if result.deleted_count == 0:
         return jsonify({"message": "Book not found"}), 404
+    
+    book_event = {
+        "event": "book_deleted",
+        "id": book_id
+    }
+    r.publish("frontend_events", json.dumps(book_event, default=json_serialize))
     return jsonify({"message": "Book removed successfully!"}), 200
 
 # Route to list all users

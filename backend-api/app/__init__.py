@@ -12,7 +12,7 @@ app.config.from_object('config.Config')
 mongo = PyMongo(app)
 
 # Redis connection
-r = redis.Redis()
+r = redis.Redis.from_url(app.config['REDIS_URL'])
 
 # Import routes (to be defined later)
 from app import routes

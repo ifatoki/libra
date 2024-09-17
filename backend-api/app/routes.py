@@ -30,7 +30,7 @@ def remove_book(book_id):
     
     book_event = {
         "event": "book_deleted",
-        "id": book_id
+        "_id": book_id
     }
     r.publish("frontend_events", json.dumps(book_event, default=json_serialize))
     return jsonify({"message": "Book removed successfully!"}), 200

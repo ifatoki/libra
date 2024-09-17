@@ -1,5 +1,7 @@
+import json
 from bson import ObjectId
 from datetime import datetime
+from app import mongo
 
 # Custom serialization function for datetime
 def json_serialize(obj):
@@ -21,3 +23,20 @@ def json_deserialize(obj):
                 continue
             continue  # If it fails, keep the original value
     return obj
+
+# Handle all frontend events
+def handle_events(message):
+    data = json.loads(message['data'], object_hook=json_deserialize)
+    if data['event'] == 'book_added':
+        # Process the event and update MongoDB
+        book = data
+        del book['event']
+        book['available'] = True
+        mongo.db.books.insert_one(book)
+        print("book added on frontend.")
+    elif data['event'] == 'book_removed':
+        # Process the event and update MongoDB
+        book = data
+        del book['event']
+        mongo.db.books.delete_one({"_id": book['_id']})
+        print("Borrow record registered on backend.")

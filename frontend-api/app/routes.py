@@ -1,4 +1,6 @@
-from app import app, mongo
+import json
+from app import app, mongo, r
+from app.helpers.utils import json_serialize
 from flask import request, jsonify
 from datetime import datetime, timedelta
 from bson.objectid import ObjectId
@@ -15,6 +17,11 @@ def enroll_user():
     }
     # Insert user into MongoDB
     mongo.db.users.insert_one(user)
+
+    # Publish a user enrolled event
+    user["event"] = "user_enrolled"
+    r.publish("backend_events", json.dumps(user, default=json_serialize))
+    
     return jsonify({"message": "User enrolled successfully!"}), 201
 
 # Route to list all available books
@@ -99,5 +106,9 @@ def borrow_book(book_id):
         "borrowed_until": borrowed_until
     }
     mongo.db.borrow_records.insert_one(borrow_record)
+
+    # Publish a borrow event
+    borrow_record["event"] = "book_borrowed"
+    r.publish("backend_events", json.dumps(borrow_record, default=json_serialize))
 
     return jsonify({"message": f"Book borrowed until {borrowed_until}"}), 200

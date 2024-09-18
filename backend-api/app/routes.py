@@ -1,6 +1,6 @@
 from app import mongo, r
 from flask import Blueprint, request, jsonify
-from app.services import add_book_service, remove_book_service, list_users_service, list_borrow_records_service, list_unavailable_books_service
+from app.services import *
 
 admin_bp = Blueprint('admin_bp', __name__, url_prefix='/admin')
 
@@ -22,9 +22,9 @@ def list_users():
     users_data = list_users_service(mongo)
     return jsonify(users_data), 200
 
-@admin_bp.route('/borrow-records', methods=['GET'])
+@admin_bp.route('/users/borrowed', methods=['GET'])
 def list_borrow_records():
-    records_data = list_borrow_records_service(mongo)
+    records_data = list_users_with_borrowed_books(mongo)
     return jsonify(records_data), 200
 
 @admin_bp.route('/books/unavailable', methods=['GET'])

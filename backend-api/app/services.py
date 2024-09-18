@@ -2,6 +2,7 @@ import json
 from bson.objectid import ObjectId
 from datetime import datetime
 from app.helpers.utils import json_serialize
+from app.helpers.aggregate_pipelines import users_borrowed
 
 # Dependency injection of services (mongo, redis)
 def add_book_service(mongo, redis, book_data):
@@ -42,24 +43,14 @@ def list_users_service(mongo):
         } for user in users
     ]
 
-def list_borrow_records_service(mongo):
-    borrow_records = mongo.db.borrow_records.find()
-    return [
-        {
-            'id': str(record['_id']),
-            'user_id': str(record['user_id']),
-            'book_id': str(record['book_id']),
-            'borrowed_on': record['borrowed_on'],
-            'borrowed_until': record['borrowed_until']
-        } for record in borrow_records
-    ]
+def list_users_with_borrowed_books(mongo):
+    
+    # Execute the aggregation pipeline
+    result = list(mongo.db.borrow_records.aggregate(users_borrowed))
+    return result
 
 def list_unavailable_books_service(mongo):
-    now = datetime.utcnow()
-    borrow_records = mongo.db.borrow_records.find({"borrowed_until": {"$gte": now}})
-    unavailable_books = set(record['book_id'] for record in borrow_records)
-    books = mongo.db.books.find({"_id": {"$in": list(unavailable_books)}})
-    
+    unavailable_books = mongo.db.books.find({ 'available': { '$ne': True }})
     return [
         {
             'id': str(book['_id']),
@@ -67,6 +58,6 @@ def list_unavailable_books_service(mongo):
             'author': book['author'],
             'publisher': book['publisher'],
             'category': book['category'],
-            'available_until': max(record['borrowed_until'] for record in borrow_records if record['book_id'] == book['_id'])
-        } for book in books
+            'available_on': str(book['available_on'])
+        } for book in unavailable_books
     ]

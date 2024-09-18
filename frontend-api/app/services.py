@@ -72,6 +72,8 @@ def filter_books_service(mongo, publisher=None, category=None, author=None):
 
 # Service function to borrow a book
 def borrow_book_service(mongo, redis, book_id, user_id, days):
+    if not is_user_existing(mongo, user_id):
+        return None, "User not found", 404
     if not is_book_existing(mongo, book_id):
         return None, "Book not found", 404
 
@@ -102,17 +104,21 @@ def borrow_book_service(mongo, redis, book_id, user_id, days):
 
     return borrow_record, None, 200
 
-def is_user_existing(mongo, email):
+def is_user_existing(mongo, email = None, id = None):
     """
     Checks if a user with the given email exists in the database.
     
     :param mongo: MongoDB instance
-    :param email: User's email address
+    :param identifier: User's email address or _id
     :return: Boolean value, True if user exists, False otherwise
     """
-    existing_user = mongo.db.users.find_one({"email": email})
-    return existing_user is not None
+    existing_user = None
+    if email != None:
+        existing_user = mongo.db.users.find_one({"email": email})
+    elif id != None:
+        existing_user = mongo.db.users.find_one({"_id": ObjectId(id)})
 
+    return existing_user is not None
 
 def is_book_existing(mongo, id):
     """

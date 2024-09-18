@@ -50,12 +50,14 @@ def get_book_service(mongo, book_id):
     }
 
 # Service function to filter books by publisher and/or category
-def filter_books_service(mongo, publisher=None, category=None):
+def filter_books_service(mongo, publisher=None, category=None, author=None):
     query = {"available": True}
     if publisher:
         query["publisher"] = publisher
     if category:
         query["category"] = category
+    if author:
+        query["author"] = author
 
     books = mongo.db.books.find(query)
     return [
@@ -70,10 +72,13 @@ def filter_books_service(mongo, publisher=None, category=None):
 
 # Service function to borrow a book
 def borrow_book_service(mongo, redis, book_id, user_id, days):
-    book = mongo.db.books.find_one_or_404({"_id": ObjectId(book_id)})
+    if not is_book_existing(mongo, book_id):
+        return None, "Book not found", 404
+
+    book = mongo.db.books.find_one({"_id": ObjectId(book_id)})
 
     if not book['available']:
-        return None, "Book is not available for borrowing"
+        return None, "Book is not available for borrowing", 400
 
     # Mark the book as unavailable
     mongo.db.books.update_one(
@@ -95,4 +100,27 @@ def borrow_book_service(mongo, redis, book_id, user_id, days):
     borrow_record["event"] = "book_borrowed"
     redis.publish("backend_events", json.dumps(borrow_record, default=json_serialize))
 
-    return borrow_record, None
+    return borrow_record, None, 200
+
+def is_user_existing(mongo, email):
+    """
+    Checks if a user with the given email exists in the database.
+    
+    :param mongo: MongoDB instance
+    :param email: User's email address
+    :return: Boolean value, True if user exists, False otherwise
+    """
+    existing_user = mongo.db.users.find_one({"email": email})
+    return existing_user is not None
+
+
+def is_book_existing(mongo, id):
+    """
+    Checks if a book with the given id exists in the database.
+    
+    :param mongo: MongoDB instance
+    :param id: Book's _id
+    :return: Boolean value, True if user exists, False otherwise
+    """
+    book = mongo.db.books.find_one({"_id": ObjectId(id)})
+    return book is not None

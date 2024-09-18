@@ -1,114 +1,41 @@
-import json
-from app import app, mongo, r
-from app.helpers.utils import json_serialize
-from flask import request, jsonify
-from datetime import datetime, timedelta
-from bson.objectid import ObjectId
+from flask import Blueprint, request, jsonify
+from app import mongo, r
+from app.services import enroll_user_service, list_books_service, get_book_service, filter_books_service, borrow_book_service
 
-# Route to enroll a new user
-@app.route('/users', methods=['POST'])
+user_bp = Blueprint('user_bp', __name__)
+
+@user_bp.route('/users', methods=['POST'])
 def enroll_user():
     data = request.get_json()
-    user = {
-        "email": data['email'],
-        "first_name": data['first_name'],
-        "last_name": data['last_name'],
-        "enrollment_date": datetime.utcnow()
-    }
-    # Insert user into MongoDB
-    mongo.db.users.insert_one(user)
+    user = enroll_user_service(mongo, r, data)
+    return jsonify({"message": "User enrolled successfully!", "user": user}), 201
 
-    # Publish a user enrolled event
-    user["event"] = "user_enrolled"
-    r.publish("backend_events", json.dumps(user, default=json_serialize))
-    
-    return jsonify({"message": "User enrolled successfully!"}), 201
-
-# Route to list all available books
-@app.route('/books', methods=['GET'])
+@user_bp.route('/books', methods=['GET'])
 def list_books():
-    books = mongo.db.books.find({"available": True})
-    books_data = [
-        {
-            'id': str(book['_id']),
-            'title': book['title'],
-            'author': book['author'],
-            'publisher': book['publisher'],
-            'category': book['category']
-        } for book in books
-    ]
+    books_data = list_books_service(mongo)
     return jsonify(books_data), 200
 
-# Route to get a single book by its ID
-@app.route('/books/<book_id>', methods=['GET'])
+@user_bp.route('/books/<book_id>', methods=['GET'])
 def get_book(book_id):
-    book = mongo.db.books.find_one_or_404({"_id": ObjectId(book_id)})
-    book_data = {
-        'id': str(book['_id']),
-        'title': book['title'],
-        'author': book['author'],
-        'publisher': book['publisher'],
-        'category': book['category'],
-        'available': book['available']
-    }
+    book_data = get_book_service(mongo, book_id)
     return jsonify(book_data), 200
 
-# Route to filter books by publisher or category
-@app.route('/books/filter', methods=['GET'])
+@user_bp.route('/books/filter', methods=['GET'])
 def filter_books():
     publisher = request.args.get('publisher')
     category = request.args.get('category')
-
-    query = {"available": True}
-
-    if publisher:
-        query["publisher"] = publisher
-    if category:
-        query["category"] = category
-
-    books = mongo.db.books.find(query)
-    books_data = [
-        {
-            'id': str(book['_id']),
-            'title': book['title'],
-            'author': book['author'],
-            'publisher': book['publisher'],
-            'category': book['category']
-        } for book in books
-    ]
+    books_data = filter_books_service(mongo, publisher, category)
     return jsonify(books_data), 200
 
-# Route to borrow a book by its ID
-@app.route('/books/<book_id>/borrow', methods=['POST'])
+@user_bp.route('/books/<book_id>/borrow', methods=['POST'])
 def borrow_book(book_id):
     data = request.get_json()
     user_id = data['user_id']
     days = data['days']
 
-    book = mongo.db.books.find_one_or_404({"_id": ObjectId(book_id)})
+    borrow_record, error = borrow_book_service(mongo, r, book_id, user_id, days)
 
-    # Check if the book is available
-    if not book['available']:
-        return jsonify({"message": "Book is not available for borrowing"}), 400
+    if error:
+        return jsonify({"message": error}), 400
 
-    # Mark the book as unavailable
-    mongo.db.books.update_one(
-        {"_id": ObjectId(book_id)},
-        {"$set": {"available": False}}
-    )
-
-    # Create a borrow record
-    borrowed_until = datetime.utcnow() + timedelta(days=days)
-    borrow_record = {
-        "user_id": ObjectId(user_id),
-        "book_id": ObjectId(book_id),
-        "borrowed_on": datetime.utcnow(),
-        "borrowed_until": borrowed_until
-    }
-    mongo.db.borrow_records.insert_one(borrow_record)
-
-    # Publish a borrow event
-    borrow_record["event"] = "book_borrowed"
-    r.publish("backend_events", json.dumps(borrow_record, default=json_serialize))
-
-    return jsonify({"message": f"Book borrowed until {borrowed_until}"}), 200
+    return jsonify({"message": f"Book borrowed until {borrow_record['borrowed_until']}"}), 200

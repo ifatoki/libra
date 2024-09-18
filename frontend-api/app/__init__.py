@@ -14,5 +14,6 @@ mongo = PyMongo(app)
 # Redis connection
 r = redis.Redis.from_url(app.config['REDIS_URL'])
 
-# Import routes (to be defined later)
-from app import routes
+# Register blueprints
+from app.routes import user_bp
+app.register_blueprint(user_bp)

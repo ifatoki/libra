@@ -38,7 +38,7 @@ def handle_events(message):
         borrow_record = data
         del borrow_record['event']
         mongo.db.borrow_records.insert_one(borrow_record)
-        item = mongo.db.books.update_one(
+        mongo.db.books.update_one(
 			{"_id": borrow_record['book_id']},
 			{"$set": {
 				"available": False,

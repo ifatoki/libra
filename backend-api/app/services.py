@@ -14,9 +14,11 @@ def add_book_service(mongo, redis, book_data):
     }
     mongo.db.books.insert_one(book)
     
-    book["event"] = "book_added"
-    book['_id'] = str(book['_id'])
-    redis.publish("frontend_events", json.dumps(book, default=json_serialize))
+    book_event = book.copy()
+    book_event["event"] = "book_added"
+    if hasattr(book, '_id'):
+        book['_id'] = str(book['_id'])
+    redis.publish("frontend_events", json.dumps(book_event, default=json_serialize))
     return book
 
 def remove_book_service(mongo, redis, book_id):

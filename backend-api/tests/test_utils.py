@@ -1,98 +1,119 @@
 import unittest
-from unittest.mock import patch
-from datetime import datetime
 from bson import ObjectId
+from datetime import datetime
+from unittest.mock import MagicMock, patch
 from app.helpers.utils import json_serialize, json_deserialize, handle_events
 import json
 
-class TestUtils(unittest.TestCase):
+class TestJsonSerialize(unittest.TestCase):
 
-    def setUp(self):
-        # Setup initial data
-        self.datetime_obj = datetime(2024, 9, 19, 12, 0, 0)
-        self.object_id = ObjectId('6509189b3f1a5b5e5c7b10e0')
-        self.serialized_data = {
-            'date': self.datetime_obj.isoformat(),
-            '_id': str(self.object_id)
-        }
-    
-    def test_json_serialize_datetime(self):
-        result = json_serialize(self.datetime_obj)
-        self.assertEqual(result, self.datetime_obj.isoformat())
+    def test_serialize_datetime(self):
+        # Test serializing a datetime object
+        test_datetime = datetime(2024, 9, 20, 14, 30)
+        result = json_serialize(test_datetime)
+        
+        # Assert the datetime is converted to ISO 8601 format
+        self.assertEqual(result, "2024-09-20T14:30:00")
 
-    def test_json_serialize_objectid(self):
-        result = json_serialize(self.object_id)
-        self.assertEqual(result, str(self.object_id))
+    def test_serialize_objectid(self):
+        # Test serializing an ObjectId
+        test_objectid = ObjectId()
+        result = json_serialize(test_objectid)
+        
+        # Assert the ObjectId is converted to string
+        self.assertEqual(result, str(test_objectid))
 
-    def test_json_serialize_invalid(self):
+    def test_serialize_invalid_type(self):
+        # Test serializing an unsupported type
         with self.assertRaises(TypeError):
-            json_serialize([])  # Should raise a TypeError for non-serializable types
+            json_serialize([])  # List is not serializable
 
+class TestJsonDeserialize(unittest.TestCase):
 
-    def test_json_deserialize_valid(self):
-        data = {'date': self.datetime_obj.isoformat(), '_id': str(self.object_id)}
-        result = json_deserialize(data)
-        self.assertEqual(result['date'], self.datetime_obj)
-        self.assertEqual(result['_id'], self.object_id)
-
-    def test_json_deserialize_invalid(self):
-        data = {'random': 'invalid'}
-        result = json_deserialize(data)
-        self.assertEqual(result['random'], 'invalid')  # Should leave non-datetime, non-ObjectId fields unchanged
-
-
-    @patch('app.helpers.utils.mongo.db.users')
-    def test_handle_user_enrolled_event(self, mock_users):
-        message = {
-            'data': json.dumps({
-                'event': 'user_enrolled',
-                'email': 'user@example.com',
-                'first_name': 'John',
-                'last_name': 'Doe',
-                '_id': str(self.object_id)
-            })
-        }
+    def test_deserialize_datetime(self):
+        # Test deserializing an ISO 8601 datetime string
+        obj = {'key': '2024-09-20T14:30:00'}
+        result = json_deserialize(obj)
         
-        # Call the event handler
-        handle_events(message)
+        # Assert the datetime string is converted back to datetime object
+        self.assertIsInstance(result['key'], datetime)
+        self.assertEqual(result['key'], datetime(2024, 9, 20, 14, 30))
+
+    def test_deserialize_objectid(self):
+        # Test deserializing an ObjectId string
+        obj = {'key': str(ObjectId())}
+        result = json_deserialize(obj)
         
-        # Assert the user was inserted into MongoDB
-        # mock_users.insert_one.assert_called_once()
-        mock_users.insert_one.assert_called_once_with({
+        # Assert the ObjectId string is converted back to ObjectId object
+        self.assertIsInstance(result['key'], ObjectId)
+
+    def test_deserialize_invalid_type(self):
+        # Test that deserialization ignores non-datetime, non-ObjectId values
+        obj = {'key': 'some_random_string'}
+        result = json_deserialize(obj)
+        
+        # Assert the value remains unchanged
+        self.assertEqual(result['key'], 'some_random_string')
+
+class TestHandleEventsBackend(unittest.TestCase):
+
+    @patch('app.helpers.utils.mongo')
+    @patch('app.helpers.utils.json.loads')
+    def test_handle_user_enrolled_event(self, mock_json_loads, mock_mongo):
+        # Mock the incoming message
+        mock_json_loads.return_value = {
+            'event': 'user_enrolled',
+            '_id': ObjectId(),
             'email': 'user@example.com',
             'first_name': 'John',
-            'last_name': 'Doe',
-            '_id': self.object_id
-        })
-
-    @patch('app.helpers.utils.mongo.db.books')
-    @patch('app.helpers.utils.mongo.db.borrow_records')
-    def test_handle_book_borrowed_event(self, mock_borrow_records, mock_books):
-        message = {
-            'data': json.dumps({
-                'event': 'book_borrowed',
-                'book_id': str(self.object_id),
-                'borrowed_until': self.datetime_obj.isoformat(),
-                '_id': str(self.object_id)
-            })
+            'last_name': 'Doe'
         }
-        
-        # Call the event handler
-        handle_events(message)
-        
-        # Assert the borrow record was inserted into MongoDB
-        # mock_borrow_records.insert_one.assert_called_once()
-        mock_borrow_records.insert_one.assert_called_once_with({
-            'book_id': self.object_id,
-            'borrowed_until': self.datetime_obj,
-            '_id': self.object_id
-        })
-        
-        # Assert the book's availability was updated in MongoDB
-        mock_books.update_one.assert_called_once_with(
-            {"_id": self.object_id},
-            {"$set": {"available": False, "available_on": self.datetime_obj}}
-        )
 
-if __name__ == '__main__':
-    unittest.main()
+        # Mock message
+        message = {'data': '{"event": "user_enrolled"}'}
+        
+        # Call the function
+        handle_events(message)
+
+        # Assert the MongoDB insert_one was called with the correct data
+        expected_data = {
+            '_id': mock_json_loads.return_value['_id'],
+            'email': 'user@example.com',
+            'first_name': 'John',
+            'last_name': 'Doe'
+        }
+        mock_mongo.db.users.insert_one.assert_called_once_with(expected_data)
+
+    @patch('app.helpers.utils.mongo')
+    @patch('app.helpers.utils.json.loads')
+    def test_handle_book_borrowed_event(self, mock_json_loads, mock_mongo):
+        # Mock the incoming message
+        mock_json_loads.return_value = {
+            'event': 'book_borrowed',
+            'user_id': ObjectId(),
+            'book_id': ObjectId(),
+            'borrowed_until': datetime.utcnow()
+        }
+
+        # Mock message
+        message = {'data': '{"event": "book_borrowed"}'}
+        
+        # Call the function
+        handle_events(message)
+
+        # Assert the MongoDB insert_one for borrow_records was called with the correct data
+        expected_borrow_record = {
+            'user_id': mock_json_loads.return_value['user_id'],
+            'book_id': mock_json_loads.return_value['book_id'],
+            'borrowed_until': mock_json_loads.return_value['borrowed_until']
+        }
+        mock_mongo.db.borrow_records.insert_one.assert_called_once_with(expected_borrow_record)
+
+        # Assert the MongoDB update_one for books was called with the correct query
+        mock_mongo.db.books.update_one.assert_called_once_with(
+            {"_id": mock_json_loads.return_value['book_id']},
+            {"$set": {
+                "available": False,
+                "available_on": mock_json_loads.return_value['borrowed_until']
+            }}
+        )

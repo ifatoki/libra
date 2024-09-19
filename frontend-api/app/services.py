@@ -18,9 +18,11 @@ def enroll_user_service(mongo, redis, user_data):
     mongo.db.users.insert_one(user)
 
     # Publish user enrollment event
-    user["event"] = "user_enrolled"
-    user["_id"] = str(user["_id"])
-    redis.publish("backend_events", json.dumps(user, default=json_serialize))
+    user_event = user.copy()
+    user_event["event"] = "user_enrolled"
+    if '_id' in user:
+        user_event["_id"] = str(user_event["_id"])
+    redis.publish("backend_events", json.dumps(user_event, default=json_serialize))
 
     return user
 

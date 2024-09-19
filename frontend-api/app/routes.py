@@ -13,10 +13,17 @@ def enroll_user():
     user = enroll_user_service(mongo, r, data)
     return jsonify({"message": "User enrolled successfully!", "user": user}), 201
 
-@user_bp.route('/books', methods=['GET'])
-def list_books():
-    books_data = list_books_service(mongo)
-    return jsonify(books_data), 200
+@user_bp.route('/books/<book_id>/borrow', methods=['POST'])
+def borrow_book(book_id):
+    data = request.get_json()
+    user_id = data['user_id']
+    days = data['days']
+
+    borrow_record, error, code = borrow_book_service(mongo, r, book_id, user_id, days)
+    if error:
+        return jsonify({"message": error}), code
+
+    return jsonify({"message": f"Book borrowed until {borrow_record['borrowed_until']}"}), 200
 
 @user_bp.route('/books/<book_id>', methods=['GET'])
 def get_book(book_id):
@@ -30,17 +37,10 @@ def filter_books():
     publisher = request.args.get('publisher')
     category = request.args.get('category')
     author = request.args.get('author')
-    books_data = filter_books_service(mongo, publisher, category, author)
+    books_data = []
+
+    if publisher or category or author:
+        books_data = filter_books_service(mongo, publisher, category, author)
+    else:
+        books_data = list_books_service(mongo)
     return jsonify(books_data), 200
-
-@user_bp.route('/books/<book_id>/borrow', methods=['POST'])
-def borrow_book(book_id):
-    data = request.get_json()
-    user_id = data['user_id']
-    days = data['days']
-
-    borrow_record, error, code = borrow_book_service(mongo, r, book_id, user_id, days)
-    if error:
-        return jsonify({"message": error}), code
-
-    return jsonify({"message": f"Book borrowed until {borrow_record['borrowed_until']}"}), 200

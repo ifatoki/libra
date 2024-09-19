@@ -16,7 +16,7 @@ def add_book_service(mongo, redis, book_data):
     
     book_event = book.copy()
     book_event["event"] = "book_added"
-    if hasattr(book, '_id'):
+    if '_id' in book:
         book['_id'] = str(book['_id'])
     redis.publish("frontend_events", json.dumps(book_event, default=json_serialize))
     return book

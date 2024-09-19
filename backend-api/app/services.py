@@ -52,7 +52,7 @@ def list_users_with_borrowed_books(mongo):
     return result
 
 def list_unavailable_books_service(mongo):
-    unavailable_books = mongo.db.books.find({ 'available': { '$ne': True }})
+    unavailable_books = mongo.db.books.find({ 'available': False })
     return [
         {
             'id': str(book['_id']),

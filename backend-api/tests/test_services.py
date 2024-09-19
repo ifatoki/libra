@@ -209,4 +209,4 @@ class TestListUnavailableBooksService(BaseServiceTest):
         self.assertEqual(result, expected_result)
 
         # Assert MongoDB query was called
-        self.mongo.db.books.find.assert_called_once_with({'available': {'$ne': True}})
+        self.mongo.db.books.find.assert_called_once_with({'available': False})

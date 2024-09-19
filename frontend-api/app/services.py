@@ -19,9 +19,9 @@ def enroll_user_service(mongo, redis, user_data):
 
     # Publish user enrollment event
     user_event = user.copy()
-    user_event["event"] = "user_enrolled"
     if '_id' in user:
-        user_event["_id"] = str(user_event["_id"])
+        user["_id"] = str(user["_id"])
+    user_event["event"] = "user_enrolled"
     redis.publish("backend_events", json.dumps(user_event, default=json_serialize))
 
     return user
@@ -74,7 +74,7 @@ def filter_books_service(mongo, publisher=None, category=None, author=None):
 
 # Service function to borrow a book
 def borrow_book_service(mongo, redis, book_id, user_id, days):
-    if not is_user_existing(mongo, user_id):
+    if not is_user_existing(mongo, id=user_id):
         return None, "User not found", 404
     if not is_book_existing(mongo, book_id):
         return None, "Book not found", 404

@@ -8,7 +8,7 @@ user_bp = Blueprint('user_bp', __name__)
 def enroll_user():
     data = request.get_json()
     
-    if is_user_existing(mongo, data['email']):
+    if is_user_existing(mongo, email=data['email']):
         return jsonify({"message": "User with this email already exists"}), 400
     user = enroll_user_service(mongo, r, data)
     return jsonify({"message": "User enrolled successfully!", "user": user}), 201

@@ -48,7 +48,7 @@ class TestEnrollUserRoute(BaseTestCase):
         self.assertEqual(response.json['user']['email'], 'user@example.com')
 
         # Check if the services were called correctly
-        mock_is_user_existing.assert_called_once_with(mock_mongo, 'user@example.com')
+        mock_is_user_existing.assert_called_once_with(mock_mongo, email='user@example.com')
         mock_enroll_user_service.assert_called_once_with(mock_mongo, mock_redis, user_data)
 
     @patch('app.routes.is_user_existing')
@@ -72,7 +72,7 @@ class TestEnrollUserRoute(BaseTestCase):
         self.assertEqual(response.json['message'], 'User with this email already exists')
 
         # Check if the service was called correctly
-        mock_is_user_existing.assert_called_once_with(mock_mongo, 'user@example.com')
+        mock_is_user_existing.assert_called_once_with(mock_mongo, email='user@example.com')
 
 class TestListBooksRoute(BaseTestCase):
 

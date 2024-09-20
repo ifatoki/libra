@@ -120,7 +120,7 @@ class TestListUsersService(BaseServiceTest):
         # Assert the expected result
         expected_result = [
             {
-                'id': str(user['_id']),
+                '_id': str(user['_id']),
                 'email': user['email'],
                 'first_name': user['first_name'],
                 'last_name': user['last_name'],
@@ -195,7 +195,7 @@ class TestListUnavailableBooksService(BaseServiceTest):
         # Prepare the expected result
         expected_result = [
             {
-                'id': str(book['_id']),
+                '_id': str(book['_id']),
                 'title': book['title'],
                 'author': book['author'],
                 'publisher': book['publisher'],

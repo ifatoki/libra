@@ -1,7 +1,7 @@
 import json
+from datetime import datetime, timedelta
 from flask import Blueprint
 from bson.objectid import ObjectId
-from datetime import datetime, timedelta
 from app.helpers.utils import json_serialize
 
 user_bp = Blueprint('user_bp', __name__)
@@ -31,7 +31,7 @@ def list_books_service(mongo):
     books = mongo.db.books.find({"available": True})
     return [
         {
-            'id': str(book['_id']),
+            '_id': str(book['_id']),
             'title': book['title'],
             'author': book['author'],
             'publisher': book['publisher'],
@@ -43,7 +43,7 @@ def list_books_service(mongo):
 def get_book_service(mongo, book_id):
     book = mongo.db.books.find_one_or_404({"_id": ObjectId(book_id)})
     return {
-        'id': str(book['_id']),
+        '_id': str(book['_id']),
         'title': book['title'],
         'author': book['author'],
         'publisher': book['publisher'],
@@ -64,7 +64,7 @@ def filter_books_service(mongo, publisher=None, category=None, author=None):
     books = mongo.db.books.find(query)
     return [
         {
-            'id': str(book['_id']),
+            '_id': str(book['_id']),
             'title': book['title'],
             'author': book['author'],
             'publisher': book['publisher'],
@@ -74,7 +74,7 @@ def filter_books_service(mongo, publisher=None, category=None, author=None):
 
 # Service function to borrow a book
 def borrow_book_service(mongo, redis, book_id, user_id, days):
-    if not is_user_existing(mongo, id=user_id):
+    if not is_user_existing(mongo, _id=user_id):
         return None, "User not found", 404
     if not is_book_existing(mongo, book_id):
         return None, "Book not found", 404
@@ -106,7 +106,7 @@ def borrow_book_service(mongo, redis, book_id, user_id, days):
 
     return borrow_record, None, 200
 
-def is_user_existing(mongo, email = None, id = None):
+def is_user_existing(mongo, email = None, _id = None):
     """
     Checks if a user with the given email exists in the database.
     
@@ -115,14 +115,14 @@ def is_user_existing(mongo, email = None, id = None):
     :return: Boolean value, True if user exists, False otherwise
     """
     existing_user = None
-    if email != None:
+    if email is not None:
         existing_user = mongo.db.users.find_one({"email": email})
-    elif id != None:
-        existing_user = mongo.db.users.find_one({"_id": ObjectId(id)})
+    elif _id is not None:
+        existing_user = mongo.db.users.find_one({"_id": ObjectId(_id)})
 
     return existing_user is not None
 
-def is_book_existing(mongo, id):
+def is_book_existing(mongo, _id):
     """
     Checks if a book with the given id exists in the database.
     
@@ -130,5 +130,5 @@ def is_book_existing(mongo, id):
     :param id: Book's _id
     :return: Boolean value, True if user exists, False otherwise
     """
-    book = mongo.db.books.find_one({"_id": ObjectId(id)})
+    book = mongo.db.books.find_one({"_id": ObjectId(_id)})
     return book is not None

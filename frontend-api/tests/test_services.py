@@ -1,7 +1,7 @@
 import unittest
+from datetime import datetime, timedelta
 from unittest.mock import patch, MagicMock
 from bson.objectid import ObjectId
-from datetime import datetime, timedelta
 from app.services import *
 
 class BaseServiceTest(unittest.TestCase):
@@ -189,7 +189,7 @@ class TestIsUserExisting(BaseServiceTest):
         self.mongo.db.users.find_one.return_value = {'_id': user_id}
 
         # Call the service function
-        result = is_user_existing(self.mongo, id=user_id)
+        result = is_user_existing(self.mongo, _id=user_id)
 
         # Assert the query was made to find the user by _id
         self.mongo.db.users.find_one.assert_called_once_with({"_id": ObjectId(user_id)})

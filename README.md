@@ -21,15 +21,22 @@ The system uses **Flask** for the web framework, **MongoDB** for data storage, *
 ## Features
 
 ### User Features (Frontend API)
-- **User Enrollment**: Users can register with the system.
-- **Browse Books**: Users can browse available books.
-- **Borrow Books**: Users can borrow available books.
+- **User Enrollment**: Users can register in the library using their email, firstname and lastname.
+- **Browse Books**: 
+  * Users can list all available books.
+  * Users can get a single book by its ID.
+  * Users can filter books 
+    * by publishers e.g Wiley, Apress, Manning 
+    * by category e.g fiction, technology, science
+- **Borrow Books**: Users can borrow available books by ID specifying how long they want it.
 
 ### Admin Features (Backend API)
-- **Add Books**: Admins can add books to the catalog.
-- **Remove Books**: Admins can remove books from the catalog.
+- **Add Books**: Admins can add books to the catalogue.
+- **Remove Books**: Admins can remove books from the catalogue.
+- **List Users**: 
+  * Admins can list all registered users 
+  * Admins can list all users with borrowed books and the books they have borrowed.
 - **List Unavailable Books**: Admins can see books that are currently borrowed.
-- **List Users**: Admins can list all registered users and users with borrowed books.
 
 ### Event-Driven Design
 - **User Enrollment Event**: Publishes events when a user is enrolled.
@@ -63,7 +70,7 @@ The project is organized into the following components:
 - **MongoDB**: NoSQL database to store user, book, and borrow data.
 - **Redis**: Message broker to manage communication between microservices.
 - **Pytest**: Testing framework to ensure code quality.
-- **Docker (Optional)**: For containerization of the API.
+- **Docker**: For containerization of the API.
 
 ## Setup Instructions
 
@@ -76,8 +83,8 @@ The project is organized into the following components:
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/yourusername/library-management-system.git
-cd library-management-system
+git clone https://github.com/ifatoki/libra.git
+cd libra
 ```
 
 ### 2. Set Up Virtual Environments
@@ -86,15 +93,15 @@ You will need two separate virtual environments for the frontend and backend API
 
 ```bash
 # For Frontend API
-cd frontend
-python -m venv venv
-source venv/bin/activate
+cd frontend-api
+python -m venv .venv
+source .venv/bin/activate
 pip install -r requirements.txt
 
 # For Backend API
-cd ../backend
-python -m venv venv
-source venv/bin/activate
+cd ../backend-api
+python -m venv .venv
+source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
@@ -135,24 +142,6 @@ The Frontend API will run on port `5000` and the Backend API on port `5001`.
 
 ## API Endpoints
 
-### Frontend API Endpoints
-
-| Method | Endpoint                     | Description                     |
-|--------|------------------------------|---------------------------------|
-| POST   | `/users/enroll`               | Enroll a new user               |
-| GET    | `/books`                      | List all available books        |
-| POST   | `/books/borrow`               | Borrow a book                   |
-
-### Backend API Endpoints
-
-| Method | Endpoint                     | Description                         |
-|--------|------------------------------|-------------------------------------|
-| POST   | `/books/add`                  | Add a new book                      |
-| DELETE | `/books/remove/<book_id>`     | Remove a book by its ID             |
-| GET    | `/books/unavailable`          | List all unavailable (borrowed) books |
-| GET    | `/users`                      | List all registered users           |
-| GET    | `/users/borrowed`             | List users with borrowed books      |
-
 ## Running Unit Tests
 
 The project uses `pytest` to run unit tests. Ensure that `pytest` is installed in your virtual environments.
@@ -160,26 +149,27 @@ The project uses `pytest` to run unit tests. Ensure that `pytest` is installed i
 ### To run tests for the Frontend API:
 
 ```bash
-cd frontend
-source venv/bin/activate
+cd frontend-api
+source .venv/bin/activate
 pytest
 ```
 
 ### To run tests for the Backend API:
 
 ```bash
-cd backend
-source venv/bin/activate
+cd backend-api
+source .venv/bin/activate
 pytest
 ```
 
 ## Event-Driven Approach
 
-The system utilizes an event-driven architecture powered by Redis. Events such as user enrollment, book addition, and book borrowing trigger notifications and updates across the microservices.
+The system utilizes an event-driven architecture powered by Redis. Events such as user enrollment, book addition, book deletion, and book borrowing trigger notifications and updates across the microservices.
 
 ### Example Events:
 - **User Enrollment**: Publishes a `user_enrolled` event.
 - **Book Added**: Publishes a `book_added` event.
+- **Book Deleted**: Publishes a `book_deleted` event.
 - **Book Borrowed**: Publishes a `book_borrowed` event.
 
 The Frontend API publishes events to a Redis channel (e.g., `frontend_events`), and the Backend API subscribes to these events to keep the systems in sync.
@@ -196,5 +186,5 @@ Pull requests are welcome. For major changes, please open an issue first to disc
 
 ## Contact
 
-- Author: [Your Name](https://yourwebsite.com)
-- GitHub: [yourusername](https://github.com/yourusername)
+- Author: Itunuloluwa Fatoki
+- GitHub: [ifatoki](https://github.com/ifatoki)

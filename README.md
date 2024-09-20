@@ -1,5 +1,4 @@
-
-# Library Management System API
+# Libra
 
 This project is a **Library Management System** that consists of two independent APIs:
 - **Frontend API**: For user-facing operations like user enrollment, browsing books, and borrowing.
@@ -140,7 +139,10 @@ flask run --host=0.0.0.0 --port=5001
 
 The Frontend API will run on port `5000` and the Backend API on port `5001`.
 
-## API Endpoints
+## API Documentation
+
+You can view details of the endpoints here https://documenter.getpostman.com/view/2602351/2sAXqtaLrS
+
 
 ## Running Unit Tests
 

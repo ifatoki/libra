@@ -60,7 +60,7 @@ class TestRemoveBookRoute(BaseTestCase):
     def test_remove_book_success(self, mock_redis, mock_mongo, mock_remove_book_service):
         # Simulate successful deletion
         mock_remove_book_service.return_value = {
-            'event': 'book_deleted',
+            'event': 'book_removed',
             '_id': str(ObjectId())
         }
 

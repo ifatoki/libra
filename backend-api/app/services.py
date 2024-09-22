@@ -26,7 +26,7 @@ def remove_book_service(mongo, redis, book_id):
         return None
 
     book_event = {
-        "event": "book_deleted",
+        "event": "book_removed",
         "_id": book_id
     }
     redis.publish("frontend_events", json.dumps(book_event, default=json_serialize))

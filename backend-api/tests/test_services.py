@@ -56,12 +56,12 @@ class TestRemoveBookService(BaseServiceTest):
         # Call the service
         result = remove_book_service(self.mongo, self.redis, book_id)
 
-        # Assert the book was deleted from MongoDB
+        # Assert the book was removed from MongoDB
         self.mongo.db.books.delete_one.assert_called_once_with({"_id": ObjectId(book_id)})
 
         # Prepare the expected book event
         book_event = {
-            "event": "book_deleted",
+            "event": "book_removed",
             "_id": book_id
         }
 
@@ -82,7 +82,7 @@ class TestRemoveBookService(BaseServiceTest):
         # Call the service
         result = remove_book_service(self.mongo, self.redis, book_id)
 
-        # Assert the book was not deleted
+        # Assert the book was not removed
         self.mongo.db.books.delete_one.assert_called_once_with({"_id": ObjectId(book_id)})
 
         # Assert Redis publish was not called

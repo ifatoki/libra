@@ -41,7 +41,7 @@ The system uses **Flask** for the web framework, **MongoDB** for data storage, *
 - **User Enrollment Event**: Publishes events when a user is enrolled.
 - **Book Borrowed Event**: Publishes events when a book is borrowed.
 - **Book Added Event**: Publishes events when a book is added.
-- **Book Deleted Event**: Publishes events when a book is deleted.
+- **Book Removed Event**: Publishes events when a book is removed.
 
 ## Architecture
 
@@ -171,7 +171,7 @@ The system utilizes an event-driven architecture powered by Redis. Events such a
 ### Example Events:
 - **User Enrollment**: Publishes a `user_enrolled` event.
 - **Book Added**: Publishes a `book_added` event.
-- **Book Deleted**: Publishes a `book_deleted` event.
+- **Book Removed**: Publishes a `book_removed` event.
 - **Book Borrowed**: Publishes a `book_borrowed` event.
 
 The Frontend API publishes events to a Redis channel (e.g., `frontend_events`), and the Backend API subscribes to these events to keep the systems in sync.

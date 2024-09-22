@@ -65,11 +65,38 @@ class TestListBooksService(BaseServiceTest):
         result = list_books_service(self.mongo)
 
         # Assert the query was made to fetch available books
-        self.mongo.db.books.find.assert_called_once_with({"available": True})
+        self.mongo.db.books.find.assert_called_once_with({"available": True}, skip=0, limit=10)
 
         # Verify the result
         self.assertEqual(len(result), 1)
         self.assertEqual(result[0]['title'], '1984')
+
+    def test_list_books_pagination(self):
+        # Mock the return value of the MongoDB find() query
+        self.mongo.db.books.find.return_value = [
+            {
+                '_id': ObjectId('66eddf68c01bc9ffd69bb433'),
+                'title': 'The Sleeping Giant',
+                'author': 'Wole Soyinka',
+                'publisher': 'Penthouse Publishers',
+                'category': 'History',
+                'available': True
+            }
+        ]
+
+        books = list_books_service(self.mongo, page=1, limit=1)
+
+        self.assertEqual(len(books), 1)
+        self.assertEqual(books[0]['title'], 'The Sleeping Giant')
+
+    def test_list_books_service_no_results(self):
+        # Simulate no books available on this page
+        self.mongo.db.books.find.return_value.skip.return_value.limit.return_value = []
+
+        from app.services import list_books_service
+        books = list_books_service(self.mongo, page=2, limit=2)
+
+        self.assertEqual(len(books), 0)  # No books on this page
 
 
 class TestGetBookService(BaseServiceTest):
@@ -120,11 +147,36 @@ class TestFilterBooksService(BaseServiceTest):
             "available": True,
             "category": "Dystopian",
             "author": "George Orwell"
-        })
+        }, skip=0, limit=10)
 
         # Verify the result
         self.assertEqual(len(result), 1)
         self.assertEqual(result[0]['title'], '1984')
+
+    def test_filter_books_service_pagination(self):
+        # Mock the return value of the MongoDB find() query with filtering
+        self.mongo.db.books.find.return_value = [
+            {
+                '_id': ObjectId('66eddf68c01bc9ffd69bb433'),
+                'title': 'The Sleeping Giant',
+                'author': 'Wole Soyinka',
+                'publisher': 'Penthouse Publishers',
+                'category': 'History',
+                'available': True
+            }
+        ]
+
+        books = filter_books_service(self.mongo, author='Wole Soyinka', page=1, limit=1)
+
+        self.assertEqual(len(books), 1)
+        self.assertEqual(books[0]['author'], 'Wole Soyinka')
+
+    def test_filter_books_service_no_results(self):
+        # Simulate no results for the filter and pagination
+        self.mongo.db.books.find.return_value.skip.return_value.limit.return_value = []
+        books = filter_books_service(self.mongo, author='Nonexistent Author', page=1, limit=2)
+
+        self.assertEqual(len(books), 0)  # No books match the filter
 
 
 class TestBorrowBookService(BaseServiceTest):

@@ -1,6 +1,6 @@
 import unittest
 from unittest.mock import patch
-from flask import Flask, json
+from flask import Flask
 from app.routes import *
 from bson.objectid import ObjectId
 
@@ -21,7 +21,8 @@ class TestEnrollUserRoute(BaseTestCase):
     @patch('app.routes.enroll_user_service')
     @patch('app.routes.mongo')
     @patch('app.routes.r')
-    def test_enroll_user_success(self, mock_redis, mock_mongo, mock_enroll_user_service, mock_is_user_existing):
+    def test_enroll_user_success(
+        self, mock_redis, mock_mongo, mock_enroll_user_service, mock_is_user_existing):
         # Mock the is_user_existing service
         mock_is_user_existing.return_value = False
 
@@ -96,7 +97,46 @@ class TestListBooksRoute(BaseTestCase):
         self.assertEqual(response.json[0]['title'], 'The Great Gatsby')
 
         # Check if the service was called correctly
-        mock_list_books_service.assert_called_once_with(mock_mongo)
+        mock_list_books_service.assert_called_once_with(mock_mongo, 1, 10)
+
+    @patch('app.routes.mongo')
+    def test_books_route_pagination(self, mock_mongo):
+        # Mock the return value of the MongoDB find() query
+        mock_mongo.db.books.find.return_value = [
+            {
+                '_id': 'book1',
+                'title': 'The Sleeping Giant',
+                'author': 'Wole Soyinka',
+                'publisher': 'Penthouse Publishers',
+                'category': 'History',
+                'available': True
+            },
+            {
+                '_id': 'book2',
+                'title': 'Another Book',
+                'author': 'Chinua Achebe',
+                'publisher': 'Penthouse Publishers',
+                'category': 'History',
+                'available': True
+            }
+        ]
+
+        response = self.client.get('/books?page=1&limit=2')
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.json), 2)
+        self.assertEqual(response.json[0]['title'], 'The Sleeping Giant')
+        self.assertEqual(response.json[1]['title'], 'Another Book')
+
+    @patch('app.routes.mongo')
+    def test_books_route_empty_page(self, mock_mongo):
+        # Simulate an empty page (no results for that page)
+        mock_mongo.db.books.find.return_value.skip.return_value.limit.return_value = []
+
+        response = self.client.get('/books?page=3&limit=10')
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.json), 0)  # No books on this page
 
 
 class TestGetBookRoute(BaseTestCase):
@@ -166,7 +206,8 @@ class TestFilterBooksRoute(BaseTestCase):
         self.assertEqual(response.json[0]['author'], 'F. Scott Fitzgerald')
 
         # Check if the service was called correctly
-        mock_filter_books_service.assert_called_once_with(mock_mongo, None, None, 'F. Scott Fitzgerald')
+        mock_filter_books_service.assert_called_once_with(
+            mock_mongo, None, None, 'F. Scott Fitzgerald', 1, 10)
 
 class TestBorrowBookRoute(BaseTestCase):
 
@@ -194,7 +235,8 @@ class TestBorrowBookRoute(BaseTestCase):
         self.assertEqual(response.json['message'], 'Book borrowed until 2024-09-30')
 
         # Check if the service was called correctly
-        mock_borrow_book_service.assert_called_once_with(mock_mongo, mock_redis, book_id, borrow_data['user_id'], borrow_data['days'])
+        mock_borrow_book_service.assert_called_once_with(
+            mock_mongo, mock_redis, book_id, borrow_data['user_id'], borrow_data['days'])
 
     @patch('app.routes.borrow_book_service')
     @patch('app.routes.mongo')
@@ -218,4 +260,5 @@ class TestBorrowBookRoute(BaseTestCase):
         self.assertEqual(response.json['message'], 'Book not available')
 
         # Check if the service was called correctly
-        mock_borrow_book_service.assert_called_once_with(mock_mongo, mock_redis, book_id, borrow_data['user_id'], borrow_data['days'])
+        mock_borrow_book_service.assert_called_once_with(
+            mock_mongo, mock_redis, book_id, borrow_data['user_id'], borrow_data['days'])

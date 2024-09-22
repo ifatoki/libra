@@ -37,10 +37,15 @@ def filter_books():
     publisher = request.args.get('publisher')
     category = request.args.get('category')
     author = request.args.get('author')
+    page = int(request.args.get('page', 1))  # Default to page 1 if not provided
+    limit = int(request.args.get('limit', 10))  # Default to 10 items per page if not provided
+
     books_data = []
 
     if publisher or category or author:
-        books_data = filter_books_service(mongo, publisher, category, author)
+        books_data = filter_books_service(mongo, publisher, category, author, page, limit)
     else:
-        books_data = list_books_service(mongo)
+        books_data = list_books_service(mongo, page, limit)
+
     return jsonify(books_data), 200
+

@@ -27,8 +27,13 @@ def enroll_user_service(mongo, redis, user_data):
     return user
 
 # Service function to list all available books
-def list_books_service(mongo):
-    books = mongo.db.books.find({"available": True})
+def list_books_service(mongo, page=1, limit=10):
+    # Calculate how many documents to skip
+    skip = (page - 1) * limit
+
+    # Retrieve paginated results from the database
+    books = mongo.db.books.find({"available": True}, skip=skip, limit=limit)
+
     return [
         {
             '_id': str(book['_id']),
@@ -52,7 +57,11 @@ def get_book_service(mongo, book_id):
     }
 
 # Service function to filter books by publisher and/or category
-def filter_books_service(mongo, publisher=None, category=None, author=None):
+def filter_books_service(mongo, publisher=None, category=None, author=None, page=1, limit=10):
+    # Calculate how many documents to skip
+    skip = (page - 1) * limit
+
+    # Build the query based on the filter criteria
     query = {"available": True}
     if publisher:
         query["publisher"] = publisher
@@ -61,7 +70,9 @@ def filter_books_service(mongo, publisher=None, category=None, author=None):
     if author:
         query["author"] = author
 
-    books = mongo.db.books.find(query)
+    # Retrieve paginated filtered results from the database
+    books = mongo.db.books.find(query, skip=skip, limit=limit)
+
     return [
         {
             '_id': str(book['_id']),

@@ -32,5 +32,8 @@ def list_borrow_records():
 
 @admin_bp.route('/books/unavailable', methods=['GET'])
 def list_unavailable_books():
-    books_data = list_unavailable_books_service(mongo)
+    page = int(request.args.get('page', 1))  # Default to page 1 if not provided
+    limit = int(request.args.get('limit', 10))  # Default to 10 items per page if not provided
+
+    books_data = list_unavailable_books_service(mongo, page=page, limit=limit)
     return jsonify(books_data), 200

@@ -33,7 +33,7 @@ def remove_book_service(mongo, redis, book_id):
     return book_event
 
 def list_users_service(mongo, page=1, limit=10):
-     # Calculate how many documents to skip
+    # Calculate how many documents to skip
     skip = (page - 1) * limit
 
     # Retrieve paginated results from the database
@@ -54,8 +54,12 @@ def list_users_with_borrowed_books(mongo):
     result = list(mongo.db.borrow_records.aggregate(users_borrowed))
     return result
 
-def list_unavailable_books_service(mongo):
-    unavailable_books = mongo.db.books.find({ 'available': False })
+def list_unavailable_books_service(mongo, page=1, limit=10):
+    # Calculate how many documents to skip
+    skip = (page - 1) * limit
+
+    # Retrieve paginated results from the database
+    unavailable_books = mongo.db.books.find({ 'available': False }, skip=skip, limit=limit)
     return [
         {
             '_id': str(book['_id']),

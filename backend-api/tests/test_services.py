@@ -229,8 +229,12 @@ class TestListUnavailableBooksService(BaseServiceTest):
             for book in unavailable_books
         ]
 
+         # Call the service with a page and limit
+        limit = 10
+        skip =  0
+
         # Assert the result matches the expected output
         self.assertEqual(result, expected_result)
 
         # Assert MongoDB query was called
-        self.mongo.db.books.find.assert_called_once_with({'available': False})
+        self.mongo.db.books.find.assert_called_once_with({'available': False}, skip=skip, limit=limit)

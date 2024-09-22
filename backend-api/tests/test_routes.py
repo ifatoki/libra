@@ -198,11 +198,15 @@ class TestListUnavailableBooksRoute(BaseTestCase):
         # Make a GET request to /admin/books/unavailable
         response = self.client.get('/admin/books/unavailable')
 
+        # Setup default pagination params
+        page = 1
+        limit = 10
+
         # Assert the response
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json), 1)
         self.assertEqual(response.json[0]['title'], 'The Great Gatsby')
 
         # Check if service was called correctly
-        mock_list_unavailable_books_service.assert_called_once_with(mock_mongo)
+        mock_list_unavailable_books_service.assert_called_once_with(mock_mongo, page=page, limit=limit)
 

@@ -19,7 +19,10 @@ def remove_book(book_id):
 
 @admin_bp.route('/users', methods=['GET'])
 def list_users():
-    users_data = list_users_service(mongo)
+    page = int(request.args.get('page', 1))  # Default to page 1 if not provided
+    limit = int(request.args.get('limit', 10))  # Default to 10 items per page if not provided
+
+    users_data = list_users_service(mongo, page=page, limit=limit)
     return jsonify(users_data), 200
 
 @admin_bp.route('/users/borrowed', methods=['GET'])

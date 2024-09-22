@@ -32,8 +32,12 @@ def remove_book_service(mongo, redis, book_id):
     redis.publish("frontend_events", json.dumps(book_event, default=json_serialize))
     return book_event
 
-def list_users_service(mongo):
-    users = mongo.db.users.find()
+def list_users_service(mongo, page=1, limit=10):
+     # Calculate how many documents to skip
+    skip = (page - 1) * limit
+
+    # Retrieve paginated results from the database
+    users = mongo.db.users.find(skip=skip, limit=limit)
     return [
         {
             '_id': str(user['_id']),

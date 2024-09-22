@@ -135,6 +135,30 @@ class TestListUsersService(BaseServiceTest):
         # Assert MongoDB query was called
         self.mongo.db.users.find.assert_called_once()
 
+    def test_list_users_service_paginated(self):
+        # Mocked users returned from the database
+        mock_users = [
+            {"_id": ObjectId(), "email": "user1@example.com", "first_name": "John", "last_name": "Doe", "enrollment_date": datetime.now()},
+            {"_id": ObjectId(), "email": "user2@example.com", "first_name": "Jane", "last_name": "Doe", "enrollment_date": datetime.now()}
+        ]
+
+        # Setting up the mock for find with pagination
+        self.mongo.db.users.find.return_value = mock_users
+
+        # Call the service with a page and limit
+        page = 1
+        limit = 2
+        skip =  skip = (page - 1) * limit
+        result = list_users_service(self.mongo, page=page, limit=limit)
+
+        # Check if the result matches the mock data
+        assert len(result) == 2
+        assert result[0]['email'] == "user1@example.com"
+        assert result[1]['email'] == "user2@example.com"
+
+        # Assert that the right query was made with skip and limit
+        self.mongo.db.users.find.assert_called_with(skip=skip, limit=limit)
+
 
 class TestListUsersWithBorrowedBooksService(BaseServiceTest):
 

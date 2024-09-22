@@ -1,3 +1,4 @@
+from datetime import datetime
 import unittest
 from unittest.mock import patch, MagicMock
 from flask import Flask, json
@@ -117,8 +118,37 @@ class TestListUsersRoute(BaseTestCase):
         self.assertEqual(len(response.json), 1)
         self.assertEqual(response.json[0]['email'], 'user@example.com')
 
+        # Setup default pagination params
+        page = 1
+        limit = 10
+
         # Check if service was called correctly
-        mock_list_users_service.assert_called_once_with(mock_mongo)
+        mock_list_users_service.assert_called_once_with(mock_mongo, page=page, limit=limit)
+
+    @patch('app.routes.mongo')
+    def test_list_users_route_paginated(self, mongo_mock):
+        # Mock the return of the service
+        mock_users = [
+            {"_id": "user1", "email": "user1@example.com", "first_name": "John", "last_name": "Doe", "enrollment_date": str(datetime.now())},
+            {"_id": "user2", "email": "user2@example.com", "first_name": "Jane", "last_name": "Doe", "enrollment_date": str(datetime.now())}
+        ]
+
+        # Mock the service to return paginated users
+        mongo_mock.db.users.find.return_value = mock_users
+
+        # Call the endpoint with skip and limit query params
+        response = self.client.get('/admin/users?skip=0&limit=2')
+
+        # Verify the response
+        assert response.status_code == 200
+        response_data = response.get_json()
+        assert len(response_data) == 2
+        assert response_data[0]['email'] == "user1@example.com"
+        assert response_data[1]['email'] == "user2@example.com"
+
+        # Ensure the service was called with correct skip and limit
+        mongo_mock.db.users.find.assert_called_with(skip=0, limit=2)
+
 
 class TestListBorrowRecordsRoute(BaseTestCase):
 

@@ -3,6 +3,9 @@ users_borrowed = [
         "$match": {"returned_on": {"$exists": False}}  # Only records where books have not been returned
     },
     {
+        "$sort": { "borrowed_on": 1 }
+    },
+    {
         "$lookup": {
             "from": "users",  # Join with the users collection
             "localField": "user_id",  # Field from borrow_records

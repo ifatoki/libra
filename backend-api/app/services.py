@@ -48,10 +48,16 @@ def list_users_service(mongo, page=1, limit=10):
         } for user in users
     ]
 
-def list_users_with_borrowed_books(mongo):
+def list_users_with_borrowed_books(mongo, page=1, limit=10):
+    # Calculate how many documents to skip
+    skip = (page - 1) * limit
+
+    pipeline = users_borrowed.copy()
+    pipeline.append({"$skip": skip})
+    pipeline.append({"$limit": limit})
 
     # Execute the aggregation pipeline
-    result = list(mongo.db.borrow_records.aggregate(users_borrowed))
+    result = list(mongo.db.borrow_records.aggregate(pipeline))
     return result
 
 def list_unavailable_books_service(mongo, page=1, limit=10):

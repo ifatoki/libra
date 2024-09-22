@@ -172,13 +172,17 @@ class TestListBorrowRecordsRoute(BaseTestCase):
         # Make a GET request to /admin/users/borrowed
         response = self.client.get('/admin/users/borrowed')
 
+        # Setup default pagination params
+        page = 1
+        limit = 10
+
         # Assert the response
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json), 1)
         self.assertEqual(response.json[0]['email'], 'user@example.com')
 
         # Check if service was called correctly
-        mock_list_borrow_records_service.assert_called_once_with(mock_mongo)
+        mock_list_borrow_records_service.assert_called_once_with(mock_mongo, page=page, limit=limit)
 
 class TestListUnavailableBooksRoute(BaseTestCase):
 

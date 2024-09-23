@@ -1,6 +1,17 @@
+"""
+Controller Module handling all backend api enpoint routing
+"""
+
+from flask import Blueprint, jsonify, request
+
 from app import mongo, r
-from flask import Blueprint, request, jsonify
-from app.services import *
+from app.services import (
+    add_book_service,
+    list_unavailable_books_service,
+    list_users_service,
+    list_users_with_borrowed_books_service,
+    remove_book_service,
+)
 
 admin_bp = Blueprint('admin_bp', __name__, url_prefix='/admin')
 

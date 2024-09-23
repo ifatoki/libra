@@ -4,27 +4,29 @@ from flask import Blueprint
 from bson.objectid import ObjectId
 from app.helpers.utils import json_serialize
 
-user_bp = Blueprint('user_bp', __name__)
+user_bp = Blueprint("user_bp", __name__)
+
 
 # Service function to enroll a user
 def enroll_user_service(mongo, redis, user_data):
     user = {
-        "email": user_data['email'],
-        "first_name": user_data['first_name'],
-        "last_name": user_data['last_name'],
-        "enrollment_date": datetime.utcnow()
+        "email": user_data["email"],
+        "first_name": user_data["first_name"],
+        "last_name": user_data["last_name"],
+        "enrollment_date": datetime.utcnow(),
     }
     # Insert user into MongoDB
     mongo.db.users.insert_one(user)
 
     # Publish user enrollment event
     user_event = user.copy()
-    if '_id' in user:
+    if "_id" in user:
         user["_id"] = str(user["_id"])
     user_event["event"] = "user_enrolled"
     redis.publish("backend_events", json.dumps(user_event, default=json_serialize))
 
     return user
+
 
 # Service function to list all available books
 def list_books_service(mongo, page=1, limit=10):
@@ -43,29 +45,36 @@ def list_books_service(mongo, page=1, limit=10):
         "page_number": page,
         "page_size": limit,
         "total_record_count": count,
-        "records": [{
-            '_id': str(book['_id']),
-            'title': book['title'],
-            'author': book['author'],
-            'publisher': book['publisher'],
-            'category': book['category']
-        } for book in books]
+        "records": [
+            {
+                "_id": str(book["_id"]),
+                "title": book["title"],
+                "author": book["author"],
+                "publisher": book["publisher"],
+                "category": book["category"],
+            }
+            for book in books
+        ],
     }
+
 
 # Service function to get a book by its ID
 def get_book_service(mongo, book_id):
     book = mongo.db.books.find_one_or_404({"_id": ObjectId(book_id)})
     return {
-        '_id': str(book['_id']),
-        'title': book['title'],
-        'author': book['author'],
-        'publisher': book['publisher'],
-        'category': book['category'],
-        'available': book['available']
+        "_id": str(book["_id"]),
+        "title": book["title"],
+        "author": book["author"],
+        "publisher": book["publisher"],
+        "category": book["category"],
+        "available": book["available"],
     }
 
+
 # Service function to filter books by publisher and/or category
-def filter_books_service(mongo, publisher=None, category=None, author=None, page=1, limit=10):
+def filter_books_service(
+    mongo, publisher=None, category=None, author=None, page=1, limit=10
+):
     # Calculate how many documents to skip
     skip = (page - 1) * limit
 
@@ -88,14 +97,18 @@ def filter_books_service(mongo, publisher=None, category=None, author=None, page
         "page_number": page,
         "page_size": limit,
         "total_record_count": count,
-        "records": [{
-            '_id': str(book['_id']),
-            'title': book['title'],
-            'author': book['author'],
-            'publisher': book['publisher'],
-            'category': book['category']
-        } for book in books]
+        "records": [
+            {
+                "_id": str(book["_id"]),
+                "title": book["title"],
+                "author": book["author"],
+                "publisher": book["publisher"],
+                "category": book["category"],
+            }
+            for book in books
+        ],
     }
+
 
 # Service function to borrow a book
 def borrow_book_service(mongo, redis, book_id, user_id, days):
@@ -106,13 +119,12 @@ def borrow_book_service(mongo, redis, book_id, user_id, days):
 
     book = mongo.db.books.find_one({"_id": ObjectId(book_id)})
 
-    if not book['available']:
+    if not book["available"]:
         return None, "Book is not available for borrowing", 400
 
     # Mark the book as unavailable
     mongo.db.books.update_one(
-        {"_id": ObjectId(book_id)},
-        {"$set": {"available": False}}
+        {"_id": ObjectId(book_id)}, {"$set": {"available": False}}
     )
 
     # Create a borrow record
@@ -121,7 +133,7 @@ def borrow_book_service(mongo, redis, book_id, user_id, days):
         "user_id": ObjectId(user_id),
         "book_id": ObjectId(book_id),
         "borrowed_on": datetime.utcnow(),
-        "borrowed_until": borrowed_until
+        "borrowed_until": borrowed_until,
     }
     mongo.db.borrow_records.insert_one(borrow_record)
 
@@ -131,10 +143,11 @@ def borrow_book_service(mongo, redis, book_id, user_id, days):
 
     return borrow_record, None, 200
 
-def is_user_existing(mongo, email = None, _id = None):
+
+def is_user_existing(mongo, email=None, _id=None):
     """
     Checks if a user with the given email exists in the database.
-    
+
     :param mongo: MongoDB instance
     :param identifier: User's email address or _id
     :return: Boolean value, True if user exists, False otherwise
@@ -147,10 +160,11 @@ def is_user_existing(mongo, email = None, _id = None):
 
     return existing_user is not None
 
+
 def is_book_existing(mongo, _id):
     """
     Checks if a book with the given id exists in the database.
-    
+
     :param mongo: MongoDB instance
     :param id: Book's _id
     :return: Boolean value, True if user exists, False otherwise

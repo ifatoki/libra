@@ -49,6 +49,8 @@ def json_deserialize(obj):
 def handle_events(message):
     """
     Processes backend events based on recieved message.
+
+    :param message: A redis broadcast message
     """
 
     data = json.loads(message["data"], object_hook=json_deserialize)
@@ -74,6 +76,7 @@ def handle_events(message):
         )
         print("Borrow record registered on backend.")
 
+
 def stringify_validation_errors(errors_object):
     """
     Create a string representation of a validation error dictionary.
@@ -81,16 +84,22 @@ def stringify_validation_errors(errors_object):
     :param errors_object: Dictionary containing validation errors
     :return: A string with all validation errors
     """
-    return reduce(lambda accumulator, error: f"{accumulator}\n{error}", errors_object.values(), '')
+    return reduce(
+        lambda accumulator, error: f"{accumulator}\n{error}", errors_object.values(), ""
+    )
+
 
 def is_valid_string(val):
     return checkers.is_string(val) and val.strip()
 
+
 def is_valid_email(val):
     return checkers.is_email(val)
 
+
 def is_valid_object_id(val):
     return ObjectId.is_valid(val)
+
 
 def is_valid_number(val):
     return checkers.is_numeric(val, 1)

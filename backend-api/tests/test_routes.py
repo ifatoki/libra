@@ -99,8 +99,12 @@ class TestListUsersRoute(BaseTestCase):
     @patch('app.routes.list_users_service')
     @patch('app.routes.mongo')
     def test_list_users(self, mock_mongo, mock_list_users_service):
+        # Setup default pagination params
+        page = 1
+        limit = 10
+
         # Mock service data
-        mock_list_users_service.return_value = [
+        data = [
             {
                 'id': str(ObjectId()),
                 'email': 'user@example.com',
@@ -109,25 +113,27 @@ class TestListUsersRoute(BaseTestCase):
                 'enrollment_date': '2024-09-17T09:37:04.907Z'
             }
         ]
+        mock_list_users_service.return_value = {
+            'page_number': page,
+            'page_size': limit,
+            'total_record_count': len(data),
+            'records': data
+        }
 
         # Make a GET request to /admin/users
         response = self.client.get('/admin/users')
 
         # Assert the response
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.json), 1)
-        self.assertEqual(response.json[0]['email'], 'user@example.com')
-
-        # Setup default pagination params
-        page = 1
-        limit = 10
+        self.assertEqual(len(response.json['records']), len(data))
+        self.assertEqual(response.json['records'][0]['email'], 'user@example.com')
 
         # Check if service was called correctly
         mock_list_users_service.assert_called_once_with(mock_mongo, page=page, limit=limit)
 
     @patch('app.routes.list_users_service')
     @patch('app.routes.mongo')
-    def test_list_users_route_paginated(self, mongo_mock, list_users_service_mock):
+    def test_list_users_route_paginated(self, mock_mongo, mock_list_users_service):
         # Setup default pagination params
         page = 1
         limit = 10
@@ -145,7 +151,7 @@ class TestListUsersRoute(BaseTestCase):
         }
 
         # Mock the service to return paginated users
-        list_users_service_mock.return_value = service_result
+        mock_list_users_service.return_value = service_result
 
         # Call the endpoint with skip and limit query params
         response = self.client.get(f'/admin/users?page={page}&limit={limit}')
@@ -158,7 +164,7 @@ class TestListUsersRoute(BaseTestCase):
         assert response_data['records'][1]['email'] == "user2@example.com"
 
         # Ensure the service was called with correct skip and limit
-        list_users_service_mock.assert_called_with(mongo_mock, page=page, limit=limit)
+        mock_list_users_service.assert_called_with(mock_mongo, page=page, limit=limit)
 
 
 class TestListBorrowRecordsRoute(BaseTestCase):
@@ -241,5 +247,4 @@ class TestListUnavailableBooksRoute(BaseTestCase):
         self.assertEqual(response.json['records'][0]['title'], 'The Great Gatsby')
 
         # Check if service was called correctly
-        # mock_mongo.assert_called_once_with(query, page=page, limit=limit)
         mock_service.assert_called_once_with(mock_mongo, page=page, limit=limit)

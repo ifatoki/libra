@@ -152,6 +152,11 @@ class TestListUsersService(BaseServiceTest):
         self.mongo.db.users.find.assert_called_once()
 
     def test_list_users_service_paginated(self):
+        # Setup pagination params
+        page = 1
+        limit = 2
+        skip = skip = (page - 1) * limit
+
         # Mocked users returned from the database
         mock_users = [
             {
@@ -174,14 +179,10 @@ class TestListUsersService(BaseServiceTest):
         self.mongo.db.users.find.return_value = mock_users
         self.mongo.db.users.count_documents.return_value = len(mock_users)
 
-        # Call the service with a page and limit
-        page = 1
-        limit = 2
-        skip = skip = (page - 1) * limit
         result = list_users_service(self.mongo, page=page, limit=limit)
 
         # Check if the result matches the mock data
-        assert len(result["records"]) == 2
+        assert len(result["records"]) == limit
         assert result["records"][0]["email"] == "user1@example.com"
         assert result["records"][1]["email"] == "user2@example.com"
 
@@ -223,6 +224,7 @@ class TestListUnavailableBooksService(BaseServiceTest):
         # Set default pagination params
         page = 1
         limit = 10
+        skip = (page - 1) * limit
 
         # Mock unavailable books from MongoDB
         unavailable_books = [
@@ -244,7 +246,7 @@ class TestListUnavailableBooksService(BaseServiceTest):
             },
         ]
         self.mongo.db.books.find.return_value = unavailable_books
-        self.mongo.db.books.count_documents.return_value = 12
+        self.mongo.db.books.count_documents.return_value = 2
 
         # Call the service
         result = list_unavailable_books_service(self.mongo)
@@ -253,7 +255,7 @@ class TestListUnavailableBooksService(BaseServiceTest):
         expected_result = {
             "page_number": page,
             "page_size": limit,
-            "total_record_count": 12,
+            "total_record_count": len(unavailable_books),
             "records": [
                 {
                     "_id": str(book["_id"]),
@@ -266,10 +268,6 @@ class TestListUnavailableBooksService(BaseServiceTest):
                 for book in unavailable_books
             ],
         }
-
-        # Call the service with a page and limit
-        limit = 10
-        skip = 0
 
         # Assert the result matches the expected output
         self.assertEqual(result, expected_result)

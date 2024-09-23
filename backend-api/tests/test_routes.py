@@ -1,7 +1,7 @@
 from datetime import datetime
 import unittest
-from unittest.mock import patch, MagicMock
-from flask import Flask, json
+from unittest.mock import patch
+from flask import Flask
 from app.routes import admin_bp
 from bson.objectid import ObjectId
 
@@ -208,8 +208,6 @@ class TestListUnavailableBooksRoute(BaseTestCase):
     @patch('app.routes.list_unavailable_books_service')
     @patch('app.routes.mongo')
     def test_list_unavailable_books(self, mock_mongo, mock_service):
-        query = { 'available': False }
-        
         # Setup default pagination params
         page = 1
         limit = 10

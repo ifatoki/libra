@@ -5,6 +5,8 @@ and handling backend events related to users and books.
 
 import json
 from datetime import datetime
+from functools import reduce
+from validator_collection import checkers
 
 from app import mongo
 from bson import ObjectId, errors
@@ -71,3 +73,24 @@ def handle_events(message):
             },
         )
         print("Borrow record registered on backend.")
+
+def stringify_validation_errors(errors_object):
+    """
+    Create a string representation of a validation error dictionary.
+
+    :param errors_object: Dictionary containing validation errors
+    :return: A string with all validation errors
+    """
+    return reduce(lambda accumulator, error: f"{accumulator}\n{error}", errors_object.values(), '')
+
+def is_valid_string(val):
+    return checkers.is_string(val) and val.strip()
+
+def is_valid_email(val):
+    return checkers.is_email(val)
+
+def is_valid_object_id(val):
+    return ObjectId.is_valid(val)
+
+def is_valid_number(val):
+    return checkers.is_numeric(val, 1)

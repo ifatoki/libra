@@ -12,13 +12,23 @@ from app.services import (
     list_users_with_borrowed_books_service,
     remove_book_service,
 )
+from app.helpers.utils import stringify_validation_errors
+from app.helpers.validator import APIValidator
 
 admin_bp = Blueprint('admin_bp', __name__, url_prefix='/admin')
 
 @admin_bp.route('/books', methods=['POST'])
 def add_book():
     data = request.get_json()
-    book = add_book_service(mongo, r, data)  # Inject dependencies
+
+    # Validate the book data
+    errors, is_valid = APIValidator.validate_add_book(data)
+
+    if not is_valid:
+        return jsonify({"message": stringify_validation_errors(errors)}), 400
+
+
+    book = add_book_service(mongo, r, data)
     return jsonify({"message": "Book added successfully!", "book": book}), 201
 
 @admin_bp.route('/books/<book_id>', methods=['DELETE'])

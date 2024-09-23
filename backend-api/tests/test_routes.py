@@ -163,7 +163,7 @@ class TestListUsersRoute(BaseTestCase):
 
 class TestListBorrowRecordsRoute(BaseTestCase):
 
-    @patch('app.routes.list_users_with_borrowed_books')
+    @patch('app.routes.list_users_with_borrowed_books_service')
     @patch('app.routes.mongo')
     def test_list_borrow_records(self, mock_mongo, mock_service):
         # Setup default pagination params

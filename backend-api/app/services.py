@@ -57,7 +57,7 @@ def list_users_service(mongo, page=1, limit=10):
         ]
     }
 
-def list_users_with_borrowed_books(mongo, page=1, limit=10):
+def list_users_with_borrowed_books_service(mongo, page=1, limit=10):
     # Calculate how many documents to skip
     skip = (page - 1) * limit
 

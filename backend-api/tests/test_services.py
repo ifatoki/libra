@@ -6,7 +6,7 @@ from app.services import (
     add_book_service,
     remove_book_service,
     list_users_service,
-    list_users_with_borrowed_books,
+    list_users_with_borrowed_books_service,
     list_unavailable_books_service,
 )
 from bson.objectid import ObjectId
@@ -209,7 +209,7 @@ class TestListUsersWithBorrowedBooksService(BaseServiceTest):
         self.mongo.db.borrow_records.aggregate.return_value = expected_result
 
         # Call the service
-        result = list_users_with_borrowed_books(self.mongo)
+        result = list_users_with_borrowed_books_service(self.mongo)
 
         # Ensure aggregation pipeline was executed
         self.mongo.db.borrow_records.aggregate.assert_called_once()

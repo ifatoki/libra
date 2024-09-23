@@ -7,7 +7,7 @@ import json
 from datetime import datetime
 
 from app import mongo
-from bson import ObjectId
+from bson import ObjectId, errors
 
 
 def json_serialize(obj):
@@ -37,7 +37,7 @@ def json_deserialize(obj):
         except (ValueError, TypeError):
             try:
                 obj[key] = ObjectId(value)
-            except (ValueError, TypeError):
+            except errors.InvalidId:
                 continue
             continue  # If it fails, keep the original value
     return obj

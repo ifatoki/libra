@@ -1,7 +1,10 @@
 import json
-from bson import ObjectId
 from datetime import datetime
+from functools import reduce
+
 from app import mongo
+from bson import ObjectId, errors
+
 
 # Custom serialization function for datetime
 def json_serialize(obj):
@@ -19,7 +22,7 @@ def json_deserialize(obj):
         except (ValueError, TypeError):
             try:
                 obj[key] = ObjectId(value)
-            except:
+            except errors.InvalidId:
                 continue
             continue  # If it fails, keep the original value
     return obj
@@ -40,3 +43,12 @@ def handle_events(message):
         del book['event']
         mongo.db.books.delete_one({"_id": book['_id']})
         print("Borrow record registered on backend.")
+
+def stringify_validation_errors(errors_object):
+    """
+    Create a string representation of a validation error dictionary.
+
+    :param errors_object: Dictionary containing validation errors
+    :return: A string with all validation errors
+    """
+    return reduce(lambda accumulator, error: f"{accumulator}\n{error}", errors_object.values(), '')

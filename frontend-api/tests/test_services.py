@@ -49,8 +49,13 @@ class TestEnrollUserService(BaseServiceTest):
 class TestListBooksService(BaseServiceTest):
 
     def test_list_books(self):
+         # Setup default pagination params
+        page = 1
+        limit = 10
+        skip = (page - 1) * limit
+
         # Mock the books collection
-        self.mongo.db.books.find.return_value = [
+        data = [
             {
                 '_id': ObjectId(),
                 'title': '1984',
@@ -60,18 +65,23 @@ class TestListBooksService(BaseServiceTest):
                 'available': True
             }
         ]
+        self.mongo.db.books.find.return_value = data
 
         # Call the service function
         result = list_books_service(self.mongo)
 
         # Assert the query was made to fetch available books
-        self.mongo.db.books.find.assert_called_once_with({"available": True}, skip=0, limit=10)
+        self.mongo.db.books.find.assert_called_once_with({"available": True}, skip=skip, limit=limit)
 
         # Verify the result
-        self.assertEqual(len(result), 1)
-        self.assertEqual(result[0]['title'], '1984')
+        self.assertEqual(len(result['records']), len(data))
+        self.assertEqual(result['records'][0]['title'], '1984')
 
     def test_list_books_pagination(self):
+        # Setup pagination params
+        page = 1
+        limit = 1
+
         # Mock the return value of the MongoDB find() query
         self.mongo.db.books.find.return_value = [
             {
@@ -84,19 +94,22 @@ class TestListBooksService(BaseServiceTest):
             }
         ]
 
-        books = list_books_service(self.mongo, page=1, limit=1)
+        books = list_books_service(self.mongo, page=page, limit=limit)
 
-        self.assertEqual(len(books), 1)
-        self.assertEqual(books[0]['title'], 'The Sleeping Giant')
+        self.assertEqual(len(books['records']), limit)
+        self.assertEqual(books['records'][0]['title'], 'The Sleeping Giant')
 
     def test_list_books_service_no_results(self):
+        # Setup pagination params
+        page = 2
+        limit = 2
+
         # Simulate no books available on this page
-        self.mongo.db.books.find.return_value.skip.return_value.limit.return_value = []
+        self.mongo.db.books.find.return_value = []
 
-        from app.services import list_books_service
-        books = list_books_service(self.mongo, page=2, limit=2)
+        books = list_books_service(self.mongo, page=page, limit=limit)
 
-        self.assertEqual(len(books), 0)  # No books on this page
+        self.assertEqual(len(books['records']), 0)  # No books on this page
 
 
 class TestGetBookService(BaseServiceTest):
@@ -127,8 +140,13 @@ class TestGetBookService(BaseServiceTest):
 class TestFilterBooksService(BaseServiceTest):
 
     def test_filter_books_by_category_and_author(self):
+        # Setup default pagination params
+        page = 1
+        limit = 10
+        skip = (page - 1) * limit
+
         # Mock the books collection
-        self.mongo.db.books.find.return_value = [
+        data = [
             {
                 '_id': ObjectId(),
                 'title': '1984',
@@ -138,6 +156,7 @@ class TestFilterBooksService(BaseServiceTest):
                 'available': True
             }
         ]
+        self.mongo.db.books.find.return_value = data
 
         # Call the service function with filters
         result = filter_books_service(self.mongo, category='Dystopian', author='George Orwell')
@@ -147,15 +166,19 @@ class TestFilterBooksService(BaseServiceTest):
             "available": True,
             "category": "Dystopian",
             "author": "George Orwell"
-        }, skip=0, limit=10)
+        }, skip=skip, limit=limit)
 
         # Verify the result
-        self.assertEqual(len(result), 1)
-        self.assertEqual(result[0]['title'], '1984')
+        self.assertEqual(len(result['records']), len(data))
+        self.assertEqual(result['records'][0]['title'], '1984')
 
     def test_filter_books_service_pagination(self):
+        # Setup pagination params
+        page = 1
+        limit = 1
+
         # Mock the return value of the MongoDB find() query with filtering
-        self.mongo.db.books.find.return_value = [
+        data = [
             {
                 '_id': ObjectId('66eddf68c01bc9ffd69bb433'),
                 'title': 'The Sleeping Giant',
@@ -165,18 +188,24 @@ class TestFilterBooksService(BaseServiceTest):
                 'available': True
             }
         ]
+        self.mongo.db.books.find.return_value = data
 
-        books = filter_books_service(self.mongo, author='Wole Soyinka', page=1, limit=1)
+        books = filter_books_service(self.mongo, author='Wole Soyinka', page=page, limit=page)
 
-        self.assertEqual(len(books), 1)
-        self.assertEqual(books[0]['author'], 'Wole Soyinka')
+        self.assertEqual(len(books['records']), len(data))
+        self.assertEqual(books['records'][0]['author'], 'Wole Soyinka')
 
     def test_filter_books_service_no_results(self):
-        # Simulate no results for the filter and pagination
-        self.mongo.db.books.find.return_value.skip.return_value.limit.return_value = []
-        books = filter_books_service(self.mongo, author='Nonexistent Author', page=1, limit=2)
+        # Setup pagination params
+        page = 1
+        limit = 2
 
-        self.assertEqual(len(books), 0)  # No books match the filter
+        # Simulate no results for the filter and pagination
+        data = []
+        self.mongo.db.books.find.return_value = data
+        books = filter_books_service(self.mongo, author='Nonexistent Author', page=page, limit=limit)
+
+        self.assertEqual(len(books['records']), len(data))  # No books match the filter
 
 
 class TestBorrowBookService(BaseServiceTest):

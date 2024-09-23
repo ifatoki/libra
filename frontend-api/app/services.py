@@ -28,21 +28,29 @@ def enroll_user_service(mongo, redis, user_data):
 
 # Service function to list all available books
 def list_books_service(mongo, page=1, limit=10):
+    query = {"available": True}
+
     # Calculate how many documents to skip
     skip = (page - 1) * limit
 
-    # Retrieve paginated results from the database
-    books = mongo.db.books.find({"available": True}, skip=skip, limit=limit)
+    # Get the total number of books matching the query (before applying skip/limit)
+    count = mongo.db.books.count_documents(query)
 
-    return [
-        {
+    # Retrieve paginated results from the database
+    books = mongo.db.books.find(query, skip=skip, limit=limit)
+
+    return {
+        "page_number": page,
+        "page_size": limit,
+        "total_record_count": count,
+        "records": [{
             '_id': str(book['_id']),
             'title': book['title'],
             'author': book['author'],
             'publisher': book['publisher'],
             'category': book['category']
-        } for book in books
-    ]
+        } for book in books]
+    }
 
 # Service function to get a book by its ID
 def get_book_service(mongo, book_id):
@@ -70,18 +78,24 @@ def filter_books_service(mongo, publisher=None, category=None, author=None, page
     if author:
         query["author"] = author
 
+    # Get the total number of books matching the query (before applying skip/limit)
+    count = mongo.db.books.count_documents(query)
+
     # Retrieve paginated filtered results from the database
     books = mongo.db.books.find(query, skip=skip, limit=limit)
 
-    return [
-        {
+    return {
+        "page_number": page,
+        "page_size": limit,
+        "total_record_count": count,
+        "records": [{
             '_id': str(book['_id']),
             'title': book['title'],
             'author': book['author'],
             'publisher': book['publisher'],
             'category': book['category']
-        } for book in books
-    ]
+        } for book in books]
+    }
 
 # Service function to borrow a book
 def borrow_book_service(mongo, redis, book_id, user_id, days):

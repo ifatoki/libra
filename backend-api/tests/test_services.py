@@ -113,21 +113,26 @@ class TestListUsersService(BaseServiceTest):
             }
         ]
         self.mongo.db.users.find.return_value = users
+        self.mongo.db.users.count_documents.return_value = len(users)
 
         # Call the service
         result = list_users_service(self.mongo)
 
         # Assert the expected result
-        expected_result = [
-            {
-                '_id': str(user['_id']),
-                'email': user['email'],
-                'first_name': user['first_name'],
-                'last_name': user['last_name'],
-                'enrollment_date': user['enrollment_date']
-            }
-            for user in users
-        ]
+        expected_result = {
+            "page_number": 1,
+            "page_size": 10,
+            "total_record_count": len(users),
+            "records": [
+                {
+                    '_id': str(user['_id']),
+                    'email': user['email'],
+                    'first_name': user['first_name'],
+                    'last_name': user['last_name'],
+                    'enrollment_date': user['enrollment_date']
+                }
+                for user in users
+            ]}
 
         # Assert the result matches expected output
         self.assertEqual(result, expected_result)
@@ -144,6 +149,7 @@ class TestListUsersService(BaseServiceTest):
 
         # Setting up the mock for find with pagination
         self.mongo.db.users.find.return_value = mock_users
+        self.mongo.db.users.count_documents.return_value = len(mock_users)
 
         # Call the service with a page and limit
         page = 1
@@ -152,19 +158,19 @@ class TestListUsersService(BaseServiceTest):
         result = list_users_service(self.mongo, page=page, limit=limit)
 
         # Check if the result matches the mock data
-        assert len(result) == 2
-        assert result[0]['email'] == "user1@example.com"
-        assert result[1]['email'] == "user2@example.com"
+        assert len(result['records']) == 2
+        assert result['records'][0]['email'] == "user1@example.com"
+        assert result['records'][1]['email'] == "user2@example.com"
 
         # Assert that the right query was made with skip and limit
-        self.mongo.db.users.find.assert_called_with(skip=skip, limit=limit)
+        self.mongo.db.users.find.assert_called_with({}, skip=skip, limit=limit)
 
 
 class TestListUsersWithBorrowedBooksService(BaseServiceTest):
 
     def test_list_users_with_borrowed_books(self):
         # Mock pipeline execution result
-        expected_result = [
+        data = [
             {
                 '_id': ObjectId(),
                 'email': 'user@example.com',
@@ -177,6 +183,10 @@ class TestListUsersWithBorrowedBooksService(BaseServiceTest):
                 ]
             }
         ]
+        expected_result = {
+            "total_count": [{"count": 4}],
+            "data": data
+        }
         self.mongo.db.borrow_records.aggregate.return_value = expected_result
 
         # Call the service
@@ -185,13 +195,17 @@ class TestListUsersWithBorrowedBooksService(BaseServiceTest):
         # Ensure aggregation pipeline was executed
         self.mongo.db.borrow_records.aggregate.assert_called_once()
 
-        self.assertEqual(len(result), 1)
-        self.assertEqual(result[0]['email'], 'user@example.com')
+        self.assertEqual(len(result['records']), len(data))
+        self.assertEqual(result['records'][0]['email'], 'user@example.com')
 
 
 class TestListUnavailableBooksService(BaseServiceTest):
 
     def test_list_unavailable_books_service(self):
+        # Set default pagination params
+        page = 1
+        limit = 10
+        
         # Mock unavailable books from MongoDB
         unavailable_books = [
             {
@@ -212,22 +226,27 @@ class TestListUnavailableBooksService(BaseServiceTest):
             }
         ]
         self.mongo.db.books.find.return_value = unavailable_books
+        self.mongo.db.books.count_documents.return_value = 12
 
         # Call the service
         result = list_unavailable_books_service(self.mongo)
 
         # Prepare the expected result
-        expected_result = [
-            {
-                '_id': str(book['_id']),
-                'title': book['title'],
-                'author': book['author'],
-                'publisher': book['publisher'],
-                'category': book['category'],
-                'available_on': str(book['available_on'])
-            }
-            for book in unavailable_books
-        ]
+        expected_result = {   
+            "page_number": page,
+            "page_size": limit,
+            "total_record_count": 12,
+            'records': [
+                {
+                    '_id': str(book['_id']),
+                    'title': book['title'],
+                    'author': book['author'],
+                    'publisher': book['publisher'],
+                    'category': book['category'],
+                    'available_on': str(book['available_on'])
+                }
+                for book in unavailable_books
+            ]}
 
          # Call the service with a page and limit
         limit = 10
